@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 61
+names: ['''', '-', 'apple', 'asparagus', 'avocado', 'banana', 'bell pepper', 'bitter gourd', 'bok choy', 'broccoli', 'cabbage', 'carrot', 'cashew', 'cauliflower', 'chayote', 'chicken breast', 'chicken thigh', 'chicken wing', 'chilli', 'coconut', 'coconuts', 'corn', 'crab', 'cucumber', 'egg', 'egg_', 'eggplant', 'garlic', 'ginger', 'grapes', 'lemon', 'lettuce', 'lobster tails', 'mango', 'melon', 'milk', 'onion', 'orange', 'oysters', 'pawpaw', 'peanuts', 'peas', 'peper', 'pepper', 'pineapple', 'pork belly', 'potato', 'pumpkin', 'radishes', 'red rice', 'salmon', 'sea scallops', 'shrimp', 'spinach', 'strawberry', 'sweet potato', 'tempeh', 'tofu', 'tomato', 'tuna', 'white rice']
+
+roboflow:
+  workspace: test-image-preprocessing
+  project: food-ingredient-recognition-51ngf
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/test-image-preprocessing/food-ingredient-recognition-51ngf/dataset/4

@@ -2,7 +2,7 @@ name: ratatouille
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -28,11 +28,25 @@ dependencies:
   cupertino_icons: ^1.0.6
   excel: ^4.0.2 # Updated version constraint for excel package
   path_provider: ^2.0.2
+  camera: ^0.11.0
+  image_picker: ^1.1.1
+  fluttertoast: ^8.0.8
+  flutter_launcher_icons: ^0.13.1
+  flutter_local_notifications: ^17.1.2
+  flutter_slidable: ^3.1.0
+  flutter_svg: ^2.0.10+1
+  flutter_svg_provider: ^1.0.7
+  permission_handler: ^11.3.1
+  url_launcher: ^6.0.12
+  http: ^1.2.1
+
+
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true

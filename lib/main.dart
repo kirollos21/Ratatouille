@@ -2,10 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:excel/excel.dart';
 import 'dart:io';
+import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart'; // Import the flutter/services.dart package
+import 'package:url_launcher/url_launcher.dart'; // Import the url_launcher package
+import 'package:image_picker/image_picker.dart'; // Import the image_picker package
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
+import 'dart:async';
 
-void main() {
-  runApp(RatatouilleApp());
+List<CameraDescription> cameras = [];
+
+Future<Map<String, dynamic>> sendImageToServer(String imagePath) async {
+  final String apiUrl = "http://127.0.0.1:5000/infer";
+  try {
+    var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+    var streamedResponse = await request.send().timeout(Duration(seconds: 30));
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to send image to server: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error sending image to server: $e');
+    throw Exception('Error sending image to server: $e');
+  }
 }
+
+
+
+
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    print('Error: $e.code\nError Message: $e.message');
+  }
+  runApp(const RatatouilleApp());
+}
+
+Future<Directory> getTemporaryDirectory() async {
+  return Directory.systemTemp;
+}
+String join(String base, String path) {
+  return base + Platform.pathSeparator + path;
+}
+
 
 class RatatouilleApp extends StatelessWidget {
   const RatatouilleApp({Key? key}) : super(key: key);
@@ -15,27 +64,30 @@ class RatatouilleApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ratatouille',
       theme: ThemeData(
-        primaryColor: Color(0xFF186996),
+        primaryColor: const Color(0xFF186996),
         fontFamily: 'RatatouilleFont',
       ),
-      home: LoginPage(),
+      home: const LoginPage(),
+
     );
   }
 }
 
 class LoginPage extends StatelessWidget {
+  const LoginPage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final TextEditingController usernameController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
-        backgroundColor: Color(0xFFF0D541),
+        title: const Text('Login'),
+        backgroundColor: const Color(0xFFF0D541),
       ),
-      backgroundColor: Color(0xFFF0D541),
+      backgroundColor: const Color(0xFFF0D541),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -43,23 +95,23 @@ class LoginPage extends StatelessWidget {
               'assets/logo.png',
               height: 250,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: usernameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Username',
                 prefixIcon: Icon(Icons.person),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Password',
                 prefixIcon: Icon(Icons.lock),
               ),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 String username = usernameController.text; // Get the entered username
@@ -68,9 +120,9 @@ class LoginPage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => CookingPage(username: username)), // Pass the username to CookingPage
                 );
               },
-              child: Text('Login'),
+              child: const Text('Login'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -78,7 +130,7 @@ class LoginPage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => SignUpPage()),
                 );
               },
-              child: Text('Don\'t have an account? Sign up'),
+              child: const Text('Don\'t have an account? Sign up'),
             ),
           ],
         ),
@@ -90,38 +142,38 @@ class LoginPage extends StatelessWidget {
 class CookingPage extends StatelessWidget {
   final String username;
 
-  const CookingPage({required this.username});
+  const CookingPage({Key? key, required this.username}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome to Ratatouille'),
-        backgroundColor: Color(0xFFF0D541),
+        title: const Text('Welcome to Ratatouille'),
+        backgroundColor: const Color(0xFFF0D541),
       ),
-      backgroundColor: Color(0xFFF0D541),
+      backgroundColor: const Color(0xFFF0D541),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               'Hello $username',
-              style: TextStyle(fontSize: 24),
+              style: const TextStyle(fontSize: 24),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Image.asset(
               'assets/rat.png',
               height: 200,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => IngredientsPage()),
+                  MaterialPageRoute(builder: (context) => const IngredientsPage()),
                 );
               },
-              child: Text('Let\'s Start Cooking'),
+              child: const Text('Let\'s Start Cooking'),
             ),
           ],
         ),
@@ -134,16 +186,18 @@ class SignUpPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  SignUpPage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign Up'),
-        backgroundColor: Color(0xFFF0D541),
+        title: const Text('Sign Up'),
+        backgroundColor: const Color(0xFFF0D541),
       ),
-      backgroundColor: Color(0xFFF0D541),
+      backgroundColor: const Color(0xFFF0D541),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -151,24 +205,24 @@ class SignUpPage extends StatelessWidget {
               'assets/logo.png',
               height: 250,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: usernameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Username',
                 prefixIcon: Icon(Icons.person),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: passwordController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Password',
                 prefixIcon: Icon(Icons.lock),
               ),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
                 await _saveToExcel(usernameController.text, passwordController.text);
@@ -178,19 +232,19 @@ class SignUpPage extends StatelessWidget {
                 usernameController.clear();
                 passwordController.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('Sign up successful!'),
                   ),
                 );
               },
-              child: Text('Sign Up'),
+              child: const Text('Sign Up'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Already have an account? Login'),
+              child: const Text('Already have an account? Login'),
             ),
           ],
         ),
@@ -207,12 +261,12 @@ class SignUpPage extends StatelessWidget {
     }
     sheet.cell(CellIndex.indexByString('A$row')).value = username as CellValue?;
     sheet.cell(CellIndex.indexByString('B$row')).value = password as CellValue?;
-    final filePath = 'documents\\usernames.xlsx';
+    const filePath = 'documents\\usernames.xlsx';
     final file = File(filePath);
     if (!await file.exists()) {
       await file.create(recursive: true);
     }
-    final bytes = await excel.encode();
+    final bytes = excel.encode();
     if (bytes != null) {
       await file.writeAsBytes(bytes);
     }
@@ -220,182 +274,92 @@ class SignUpPage extends StatelessWidget {
 }
 
 class IngredientsPage extends StatefulWidget {
+  const IngredientsPage({Key? key}) : super(key: key);
+
   @override
   _IngredientsPageState createState() => _IngredientsPageState();
 }
 
 class _IngredientsPageState extends State<IngredientsPage> {
-  List<String> ingredients = [
-    // Herbs and Spices
-    'Salt',
-    'Black pepper',
-    'Garlic powder',
-    'Onion powder',
-    'Paprika',
-    'Cumin',
-    'Chili powder',
-    'Oregano',
-    'Basil',
-    'Thyme',
-    'Rosemary',
-    'Parsley',
-    'Bay leaves',
-    'Curry powder',
-    'Cinnamon',
-    'Nutmeg',
-    'Ginger',
-    'Turmeric',
-    'Cayenne pepper',
+  late CameraController _cameraController;
+  final ImagePicker _picker = ImagePicker();
+  Future<void>? _initializeCameraFuture;
+  String? inferenceResult;
 
-    // Cooking Oils
-    'Olive oil',
-    'Vegetable oil',
-    'Canola oil',
-    'Coconut oil',
-    'Sesame oil',
+  @override
+  void dispose() {
+    super.dispose();
+    _cameraController.dispose();
+  }
 
-    // Vinegars
-    'Balsamic vinegar',
-    'White vinegar',
-    'Red wine vinegar',
-    'Apple cider vinegar',
-    'Rice vinegar',
-
-    // Condiments and Sauces
-    'Ketchup',
-    'Mustard',
-    'Mayonnaise',
-    'Soy sauce',
-    'Worcestershire sauce',
-    'Hot sauce',
-    'Barbecue sauce',
-    'Sriracha',
-    'Hoisin sauce',
-    'Fish sauce',
-    'Tomato sauce/paste',
-
-    // Grains and Cereals
-    'Rice',
-    'Pasta',
-    'Quinoa',
-    'Oats',
-    'Flour',
-    'Bread crumbs',
-
-    // Legumes
-    'Lentils',
-    'Chickpeas',
-    'Black beans',
-    'Kidney beans',
-    'Cannellini beans',
-
-    // Canned Goods
-    'Diced tomatoes',
-    'Tomato sauce',
-    'Tomato paste',
-    'Coconut milk',
-    'Broth',
-
-    // Dairy and Non-dairy
-    'Milk',
-    'Butter',
-    'Cheese',
-    'Yogurt',
-    'Cream cheese',
-    'Sour cream',
-
-    // Proteins
-    'Chicken',
-    'Beef',
-    'Pork',
-    'Fish',
-    'Tofu',
-    'Eggs',
-
-    // Fresh Produce
-    'Onions',
-    'Garlic',
-    'Potatoes',
-    'Carrots',
-    'Bell peppers',
-    'Tomatoes',
-    'Lettuce',
-    'Spinach',
-    'Broccoli',
-    'Cauliflower',
-    'Zucchini',
-    'Cucumbers',
-    'Avocados',
-    'Lemons',
-    'Limes',
-    'Apples',
-    'Bananas',
-    'Oranges',
-
-    // Nuts and Seeds
-    'Almonds',
-    'Walnuts',
-    'Pecans',
-    'Cashews',
-    'Peanuts',
-    'Sunflower seeds',
-    'Chia seeds',
-    'Flaxseeds',
-    'Sesame seeds',
-
-    // Sweeteners
-    'Granulated sugar',
-    'Brown sugar',
-    'Honey',
-    'Maple syrup',
-    'Agave syrup',
-    'Stevia',
-    'Powdered sugar',
-
-    // Baking Ingredients
-    'Baking powder',
-    'Baking soda',
-    'Vanilla extract',
-    'Cocoa powder',
-    'Chocolate chips',
-    'Yeast',
-    'Cornstarch',
-    'Molasses',
-
-    // Miscellaneous
-    'Vinegar',
-    'Honey',
-    'Breadcrumbs',
-    'Stock cubes',
-    'Bouillon',
-    'Gelatin',
-    'Cornmeal',
-    'Pickles',
-  ];
-
-  Map<String, bool> checkedIngredients = {};
+  Future<void> initializeCamera() async {
+    final cameras = await availableCameras();
+    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
+    await _cameraController.initialize();
+  }
 
   @override
   void initState() {
     super.initState();
+    initializeCamera();
     // Initialize all ingredients as unchecked
     for (String ingredient in ingredients) {
       checkedIngredients[ingredient] = false;
     }
   }
 
+  List<String> ingredients = [
+    // Herbs and Spices
+    'Salt', 'Black pepper', 'Garlic powder', 'Onion powder', 'Paprika',
+    'Cumin', 'Chili powder', 'Oregano', 'Basil', 'Thyme', 'Rosemary',
+    'Parsley', 'Bay leaves', 'Curry powder', 'Cinnamon', 'Nutmeg', 'Ginger',
+    'Turmeric', 'Cayenne pepper', 'Olive oil', 'Vegetable oil', 'Canola oil',
+    'Coconut oil', 'Sesame oil', 'Balsamic vinegar', 'White vinegar',
+    'Red wine vinegar', 'Apple cider vinegar', 'Rice vinegar', 'Ketchup',
+    'Mustard', 'Mayonnaise', 'Soy sauce', 'Worcestershire sauce', 'Hot sauce',
+    'Barbecue sauce', 'Sriracha', 'Hoisin sauce', 'Fish sauce', 'Tomato sauce/paste',
+    'Rice', 'Pasta', 'Quinoa', 'Oats', 'Flour', 'Bread crumbs', 'Lentils',
+    'Chickpeas', 'Black beans', 'Kidney beans', 'Cannellini beans', 'Diced tomatoes',
+    'Tomato sauce', 'Tomato paste', 'Coconut milk', 'Broth', 'Milk', 'Butter',
+    'Cheese', 'Yogurt', 'Cream cheese', 'Sour cream', 'Chicken', 'Beef', 'Pork',
+    'Fish', 'Tofu', 'Eggs', 'Onions', 'Garlic', 'Potatoes', 'Carrots', 'Bell peppers',
+    'Tomatoes', 'Lettuce', 'Spinach', 'Broccoli', 'Cauliflower', 'Zucchini',
+    'Cucumbers', 'Avocados', 'Lemons', 'Limes', 'Apples', 'Bananas', 'Oranges',
+    'Almonds', 'Walnuts', 'Pecans', 'Cashews', 'Peanuts', 'Sunflower seeds',
+    'Chia seeds', 'Flaxseeds', 'Sesame seeds', 'Granulated sugar', 'Brown sugar',
+    'Honey', 'Maple syrup', 'Agave syrup', 'Stevia', 'Powdered sugar', 'Baking powder',
+    'Baking soda', 'Vanilla extract', 'Cocoa powder', 'Chocolate chips', 'Yeast',
+    'Cornstarch', 'Molasses', 'Vinegar', 'Honey', 'Breadcrumbs', 'Stock cubes',
+    'Bouillon', 'Gelatin', 'Cornmeal', 'Pickles',
+  ];
+
+  Map<String, bool> checkedIngredients = {};
+  void _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      try {
+        Map<String, dynamic> result = await sendImageToServer(image.path);
+        setState(() {
+          inferenceResult = result['predictions'][0]['class'];
+        });
+      } catch (e) {
+        print('Error sending image to server: $e');
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Kitchen Ingredients'),
-        backgroundColor: Color(0xFFF0D541),
+        title: const Text('Your Kitchen Ingredients'),
+        backgroundColor: const Color(0xFFF0D541),
       ),
-      backgroundColor: Color(0xFFF0D541),
+      backgroundColor: const Color(0xFFF0D541),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Widget for each group with title
             _buildIngredientGroup('Herbs and Spices', ingredients.sublist(0, 18)),
             _buildIngredientGroup('Cooking Oils', ingredients.sublist(18, 23)),
             _buildIngredientGroup('Vinegars', ingredients.sublist(23, 28)),
@@ -410,6 +374,11 @@ class _IngredientsPageState extends State<IngredientsPage> {
             _buildIngredientGroup('Sweeteners', ingredients.sublist(96, 103)),
             _buildIngredientGroup('Baking Ingredients', ingredients.sublist(103, 111)),
             _buildIngredientGroup('Miscellaneous', ingredients.sublist(111)),
+            if (inferenceResult != null)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text('Inference Result: $inferenceResult'),
+              ),
           ],
         ),
       ),
@@ -419,7 +388,6 @@ class _IngredientsPageState extends State<IngredientsPage> {
           children: [
             ElevatedButton(
               onPressed: () {
-                // Action to search for recipes
                 List<String> selectedIngredients = [];
                 for (String ingredient in checkedIngredients.keys) {
                   if (checkedIngredients[ingredient] == true) {
@@ -428,13 +396,11 @@ class _IngredientsPageState extends State<IngredientsPage> {
                 }
                 // Perform action with selectedIngredients, like navigating to a new page to display recipes
               },
-              child: Text('Generate Recipes'),
+              child: const Text('Generate Recipes'),
             ),
             IconButton(
-              icon: Icon(Icons.camera_alt),
-              onPressed: () {
-                // Action to open camera
-              },
+              icon: const Icon(Icons.camera_alt),
+              onPressed: _pickImage,
             ),
           ],
         ),
@@ -442,21 +408,31 @@ class _IngredientsPageState extends State<IngredientsPage> {
     );
   }
 
-  // Widget for each group with title
   Widget _buildIngredientGroup(String title, List<String> ingredients) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
           child: Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18.0,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
           ),
+        ),
+        CheckboxListTile(
+          title: const Text("All"),
+          value: checkedIngredients.values.every((value) => value),
+          onChanged: (bool? value) {
+            setState(() {
+              for (var ingredient in ingredients) {
+                checkedIngredients[ingredient] = value!;
+              }
+            });
+          },
         ),
         ...ingredients.map((ingredient) {
           return CheckboxListTile(

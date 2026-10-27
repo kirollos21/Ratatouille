@@ -1,16 +1,15 @@
-# ratatouille
+# Ratatouille
 
-A new Flutter project.
+A Flutter recipe app with a computer-vision ingredient-recognition backend. Point the camera at your ingredients and get recipe suggestions.
 
-## Getting Started
+## Structure
 
-This project is a starting point for a Flutter application.
+- `lib/` — Flutter app (Android, iOS, web, desktop)
+- `Computer_Vision/`, `flaskk.py` — Python/Flask backend for ingredient recognition
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter pub get
+flutter run
+```
